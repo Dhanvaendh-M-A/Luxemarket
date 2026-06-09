@@ -30,9 +30,9 @@ app.use(morgan('dev'));
 
 // Static files for uploads
 app.use('/uploads', express.static('uploads'));
-
+  
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce_db')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://luxemarket_user:<Dhanvaendh7.M.A!>@cluster0.bg3ic3t.mongodb.net/?appName=Cluster0')
   .then(() => console.log('✅ MongoDB Connected Successfully'))
   .catch(err => {
     console.error('❌ MongoDB Connection Error:', err.message);
