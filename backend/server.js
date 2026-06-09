@@ -12,14 +12,11 @@ const app = express();
 // ============================================
 
 app.use(helmet());
+
+// Allow requests from your Vercel frontend
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    // 🔴 CHANGE THIS: Replace with your actual Render frontend URL later
-    'https://luxemarket-mlzt.onrender.com',
-  ],
-  credentials: true
+  origin: 'https://luxemarket-phi.vercel.app',
+  credentials: true  // only if you're using cookies/sessions
 }));
 
 app.use(express.json({ limit: '10mb' }));
