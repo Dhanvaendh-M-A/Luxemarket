@@ -2,42 +2,21 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 
-// Security middleware
+// Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
-    : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://luxemarket-mlzt.onrender.com',
+  ],
   credentials: true
 }));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use('/api/', limiter);
-
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
-
-// Static files for uploads
-app.use('/uploads', express.static('uploads'));
-
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce_db')
-  .then(() => console.log('✅ MongoDB Connected Successfully'))
-  .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err.message);
-    process.exit(1);
-  });
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -47,23 +26,22 @@ app.use('/api/cart', require('./routes/cart'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'E-Commerce API is running 🚀',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: err.message || 'Internal Server Error'
   });
 });
 
@@ -72,10 +50,27 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🌟 Server running on port ${PORT}`);
-  console.log(`📡 API URL: http://localhost:${PORT}/api`);
-});
+// ============================================
+// DATABASE + SERVER START
+// ============================================
 
-module.exports = app;
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ MongoDB Connection Error: ${error.message}`);
+    console.log('⚠️  Retrying in 5 seconds...');
+    setTimeout(connectDB, 5000);
+    return false;
+  }
+};
+
+connectDB().then(() => {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🌟 Server running on port ${PORT}`);
+    console.log(`📡 API URL: http://localhost:${PORT}/api`);
+  });
+});
