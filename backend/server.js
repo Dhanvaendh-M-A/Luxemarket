@@ -15,7 +15,7 @@ app.use(helmet());
 
 // Allow requests from your Vercel frontend
 app.use(cors({
-  origin: 'https://luxemarket-r703qgzy6-dhanvaendh-m-a-s-projects.vercel.app',
+  origin: 'https://dhanmarket.vercel.app',
   
   credentials: true  // only if you're using cookies/sessions
 }));
